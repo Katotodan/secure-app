@@ -1,0 +1,23 @@
+name: Security Dashboard
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  security-overview:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run all security checks
+      run: |
+        echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Container Scan" >> $GITHUB_STEP_SUMMARY
+        docker build -t scan:latest .
+        trivy image --format table scan:latest >> $GITHUB_STEP_SUMMARY || true
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Dependency Scan" >> $GITHUB_STEP_SUMMARY
+        npm ci
+        npm audit --json | npx json -a "vulnerabilities" >> $GITHUB_STEP_SUMMARY || true
